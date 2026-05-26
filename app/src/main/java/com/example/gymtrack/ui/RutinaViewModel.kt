@@ -6,6 +6,8 @@ import com.example.gymtrack.data.GymRepository
 import com.example.gymtrack.data.model.DiaRutina
 import com.example.gymtrack.data.model.Ejercicio
 import com.example.gymtrack.data.model.Rutina
+import com.example.gymtrack.data.model.SerieRealizada
+import com.example.gymtrack.data.model.SesionEntrenamiento
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -125,4 +127,89 @@ class RutinaViewModel @Inject constructor(
         val diaId = _selectedDiaId.value ?: return flowOf(emptyList())
         return repository.getEjerciciosByDia(diaId)
     }
+
+    // Recording state
+    private val _isRecording = MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
+
+    private val _recordingSets = MutableStateFlow<Map<Int, List<SetInput>>>(emptyMap())
+    val recordingSets: StateFlow<Map<Int, List<SetInput>>> = _recordingSets.asStateFlow()
+
+    fun startRecording(ejerciciosEnDia: List<Ejercicio>) {
+        _isRecording.value = true
+        _recordingSets.value = ejerciciosEnDia.associate { it.id to emptyList<SetInput>() }
+    }
+
+    fun cancelRecording() {
+        _isRecording.value = false
+        _recordingSets.value = emptyMap()
+    }
+
+    fun addSetToRecording(ejercicioId: Int) {
+        val current = _recordingSets.value.toMutableMap()
+        val sets = current.getOrDefault(ejercicioId, emptyList()).toMutableList()
+        sets.add(SetInput())
+        current[ejercicioId] = sets
+        _recordingSets.value = current
+    }
+
+    fun updateSetInRecording(ejercicioId: Int, index: Int, set: SetInput) {
+        val current = _recordingSets.value.toMutableMap()
+        val sets = current.getOrDefault(ejercicioId, emptyList()).toMutableList()
+        if (index in sets.indices) {
+            sets[index] = set
+            current[ejercicioId] = sets
+            _recordingSets.value = current
+        }
+    }
+
+    fun removeSetFromRecording(ejercicioId: Int, index: Int) {
+        val current = _recordingSets.value.toMutableMap()
+        val sets = current.getOrDefault(ejercicioId, emptyList()).toMutableList()
+        if (index in sets.indices) {
+            sets.removeAt(index)
+            current[ejercicioId] = sets
+            _recordingSets.value = current
+        }
+    }
+
+    fun saveRecording(): Boolean {
+        val rutinaId = _selectedRutinaId.value ?: return false
+        val sets = _recordingSets.value
+
+        val allSeries = sets.flatMap { (ejercicioId, setList) ->
+            setList.mapNotNull { setInput ->
+                val peso = setInput.peso.toDoubleOrNull() ?: return@mapNotNull null
+                val repeticiones = setInput.repeticiones.toIntOrNull() ?: return@mapNotNull null
+                if (peso <= 0 || repeticiones <= 0) return@mapNotNull null
+                SerieRealizada(
+                    sesionId = 0,
+                    ejercicioId = ejercicioId,
+                    peso = peso,
+                    repeticiones = repeticiones,
+                    rpe = setInput.rpe.toIntOrNull()
+                )
+            }
+        }
+
+        if (allSeries.isEmpty()) return false
+
+        viewModelScope.launch {
+            repository.registerSesionConSeries(
+                sesion = SesionEntrenamiento(
+                    rutinaId = rutinaId,
+                    fecha = System.currentTimeMillis()
+                ),
+                series = allSeries
+            )
+            cancelRecording()
+        }
+        return true
+    }
 }
+
+data class SetInput(
+    val peso: String = "",
+    val repeticiones: String = "",
+    val rpe: String = ""
+)

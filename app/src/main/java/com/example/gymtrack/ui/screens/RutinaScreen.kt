@@ -14,7 +14,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -59,20 +61,40 @@ fun RutinaScreen(
 
     val selectedRutina = rutinas.find { it.id == selectedRutinaId }
     val selectedDia = dias.find { it.id == selectedDiaId }
+    val isRecording by viewModel.isRecording.collectAsState()
+    val recordingSets by viewModel.recordingSets.collectAsState()
 
     var showCreateRutinaDialog by remember { mutableStateOf(false) }
     var showCreateDiaDialog by remember { mutableStateOf(false) }
     var showAddEjercicioDialog by remember { mutableStateOf(false) }
+    var showCancelRecordingDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
         topBar = {
             when {
+                selectedDia != null && isRecording -> TopAppBar(
+                    title = { Text("Registrar: ${selectedDia.nombre}", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            val hasSets = recordingSets.values.any { sets -> sets.any { it.peso.isNotBlank() || it.repeticiones.isNotBlank() } }
+                            if (hasSets) showCancelRecordingDialog = true
+                            else viewModel.cancelRecording()
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancelar")
+                        }
+                    }
+                )
                 selectedDia != null -> TopAppBar(
                     title = { Text(selectedDia.nombre, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     navigationIcon = {
                         IconButton(onClick = { viewModel.clearDiaSelection() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.startRecording(ejerciciosEnDia) }) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Iniciar entrenamiento")
                         }
                     }
                 )
@@ -89,6 +111,11 @@ fun RutinaScreen(
         },
         floatingActionButton = {
             when {
+                selectedDia != null && isRecording -> {
+                    FloatingActionButton(onClick = { viewModel.saveRecording() }) {
+                        Icon(Icons.Default.Check, contentDescription = "Guardar entrenamiento")
+                    }
+                }
                 selectedDia != null -> {
                     FloatingActionButton(onClick = { showAddEjercicioDialog = true }) {
                         Icon(Icons.Default.Add, contentDescription = "Añadir ejercicio")
@@ -111,6 +138,14 @@ fun RutinaScreen(
             .fillMaxSize()
             .padding(padding)
         when {
+            selectedDia != null && isRecording -> RegistroContent(
+                ejercicios = ejerciciosEnDia,
+                sets = recordingSets,
+                onAddSet = { viewModel.addSetToRecording(it) },
+                onUpdateSet = { ejercicioId, index, set -> viewModel.updateSetInRecording(ejercicioId, index, set) },
+                onRemoveSet = { ejercicioId, index -> viewModel.removeSetFromRecording(ejercicioId, index) },
+                modifier = contentModifier
+            )
             selectedDia != null -> EjerciciosEnDiaContent(
                 ejercicios = ejerciciosEnDia,
                 onRemoveEjercicio = { viewModel.removeEjercicioFromDia(it.id) },
@@ -158,6 +193,23 @@ fun RutinaScreen(
             onDismiss = { showAddEjercicioDialog = false },
             onAddEjercicio = { ejercicioId ->
                 viewModel.addEjercicioToDia(ejercicioId)
+            }
+        )
+    }
+
+    if (showCancelRecordingDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelRecordingDialog = false },
+            title = { Text("Descartar entrenamiento") },
+            text = { Text("¿Estás seguro de que quieres cancelar? Los sets ingresados se perderán.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showCancelRecordingDialog = false
+                    viewModel.cancelRecording()
+                }) { Text("Descartar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelRecordingDialog = false }) { Text("Seguir editando") }
             }
         )
     }
