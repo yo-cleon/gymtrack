@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Icon
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.gymtrack.ui.screens.EjercicioScreen
 import com.example.gymtrack.ui.screens.HistorialScreen
+import com.example.gymtrack.ui.screens.RutinaScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -50,6 +52,12 @@ class MainActivity : ComponentActivity() {
                                     icon = { Icon(Icons.Default.History, contentDescription = null) },
                                     label = { Text("Historial") }
                                 )
+                                NavigationBarItem(
+                                    selected = tab == 2,
+                                    onClick = { tab = 2 },
+                                    icon = { Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null) },
+                                    label = { Text("Rutinas") }
+                                )
                             }
                         }
                     ) { padding ->
@@ -61,6 +69,12 @@ class MainActivity : ComponentActivity() {
                                     .padding(padding)
                             )
                             1 -> HistorialScreen(
+                                viewModel = hiltViewModel(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(padding)
+                            )
+                            2 -> RutinaScreen(
                                 viewModel = hiltViewModel(),
                                 modifier = Modifier
                                     .fillMaxSize()

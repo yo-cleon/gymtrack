@@ -5,7 +5,9 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.gymtrack.data.model.DiaRutina
 import com.example.gymtrack.data.model.Ejercicio
+import com.example.gymtrack.data.model.EjercicioEnDia
 import com.example.gymtrack.data.model.EjercicioEnRutina
 import com.example.gymtrack.data.model.Rutina
 import kotlinx.coroutines.flow.Flow
@@ -32,4 +34,33 @@ interface RutinaDao {
 
     @Delete
     suspend fun deleteRutina(rutina: Rutina)
+
+    @Insert
+    suspend fun insertDia(dia: DiaRutina): Long
+
+    @Query("SELECT * FROM dias_rutina WHERE rutinaId = :rutinaId ORDER BY orden ASC")
+    fun getDiasByRutina(rutinaId: Int): Flow<List<DiaRutina>>
+
+    @Query("SELECT COALESCE(MAX(orden), 0) + 1 FROM dias_rutina WHERE rutinaId = :rutinaId")
+    suspend fun nextOrdenForDia(rutinaId: Int): Int
+
+    @Delete
+    suspend fun deleteDia(dia: DiaRutina)
+
+    @Insert
+    suspend fun insertEjercicioEnDia(relacion: EjercicioEnDia)
+
+    @Delete
+    suspend fun deleteEjercicioEnDia(relacion: EjercicioEnDia)
+
+    @Query("""
+        SELECT e.* FROM ejercicios e 
+        INNER JOIN ejercicios_en_dia ed ON e.id = ed.ejercicioId 
+        WHERE ed.diaRutinaId = :diaRutinaId 
+        ORDER BY ed.orden ASC
+    """)
+    fun getEjerciciosByDia(diaRutinaId: Int): Flow<List<Ejercicio>>
+
+    @Query("SELECT COALESCE(MAX(orden), 0) + 1 FROM ejercicios_en_dia WHERE diaRutinaId = :diaRutinaId")
+    suspend fun nextOrdenForEjercicioEnDia(diaRutinaId: Int): Int
 }
