@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -98,8 +99,8 @@ fun EjercicioScreen(viewModel: EjercicioViewModel) {
         if (mostrarDialogo) {
             AgregarEjercicioDialog(
                 onDismiss = { mostrarDialogo = false },
-                onConfirm = { nombre, grupo ->
-                    viewModel.addEjercicio(nombre, grupo, false)
+                onConfirm = { nombre, grupo, esPesoCorporal ->
+                    viewModel.addEjercicio(nombre, grupo, esPesoCorporal)
                     mostrarDialogo = false
                 }
             )
@@ -138,9 +139,10 @@ fun EjercicioItem(ejercicio: Ejercicio, onDelete: () -> Unit) {
 }
 
 @Composable
-fun AgregarEjercicioDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
+fun AgregarEjercicioDialog(onDismiss: () -> Unit, onConfirm: (String, String, Boolean) -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var grupo by remember { mutableStateOf("") }
+    var esPesoCorporal by remember { mutableStateOf(false) }
     val nombreError = nombre.isBlank()
     val grupoError = grupo.isBlank()
     val puedeGuardar = !nombreError && !grupoError
@@ -163,11 +165,20 @@ fun AgregarEjercicioDialog(onDismiss: () -> Unit, onConfirm: (String, String) ->
                     label = { Text("Grupo Muscular") },
                     isError = grupoError && grupo.isNotEmpty()
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ejercicio de peso corporal")
+                    Switch(checked = esPesoCorporal, onCheckedChange = { esPesoCorporal = it })
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(nombre.trim(), grupo.trim()) },
+                onClick = { onConfirm(nombre.trim(), grupo.trim(), esPesoCorporal) },
                 enabled = puedeGuardar
             ) {
                 Text("Guardar")

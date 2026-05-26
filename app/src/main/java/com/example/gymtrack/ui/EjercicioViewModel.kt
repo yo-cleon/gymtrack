@@ -1,10 +1,10 @@
 package com.example.gymtrack.ui
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.gymtrack.data.GymRepository
 import com.example.gymtrack.data.model.Ejercicio
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed interface UiState<out T> {
     data class Success<T>(val data: T) : UiState<T>
@@ -20,7 +21,10 @@ sealed interface UiState<out T> {
     data object Loading : UiState<Nothing>
 }
 
-class EjercicioViewModel(private val repository: GymRepository) : ViewModel() {
+@HiltViewModel
+class EjercicioViewModel @Inject constructor(
+    private val repository: GymRepository
+) : ViewModel() {
 
     val uiState: StateFlow<UiState<List<Ejercicio>>> = repository.allEjercicios
         .map<List<Ejercicio>, UiState<List<Ejercicio>>> { UiState.Success(it) }
@@ -56,15 +60,5 @@ class EjercicioViewModel(private val repository: GymRepository) : ViewModel() {
                 _mensajeError.emit("No se puede borrar: el ejercicio está en uso")
             }
         }
-    }
-}
-
-class EjercicioViewModelFactory(private val repository: GymRepository) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(EjercicioViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return EjercicioViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
