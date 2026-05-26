@@ -45,7 +45,10 @@ import com.example.gymtrack.ui.UiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EjercicioScreen(viewModel: EjercicioViewModel) {
+fun EjercicioScreen(
+    viewModel: EjercicioViewModel,
+    modifier: Modifier = Modifier
+) {
     val uiState by viewModel.uiState.collectAsState()
     var mostrarDialogo by remember { mutableStateOf(false) }
     var ejercicioAEliminar by remember { mutableStateOf<Ejercicio?>(null) }
@@ -57,7 +60,7 @@ fun EjercicioScreen(viewModel: EjercicioViewModel) {
         }
     }
 
-    Scaffold(
+    Scaffold(modifier = modifier,
         topBar = { TopAppBar(title = { Text("Mis Ejercicios") }) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {

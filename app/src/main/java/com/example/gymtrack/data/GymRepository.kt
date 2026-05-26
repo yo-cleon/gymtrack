@@ -6,6 +6,7 @@ import com.example.gymtrack.data.dao.RutinaDao
 import com.example.gymtrack.data.model.Ejercicio
 import com.example.gymtrack.data.model.EjercicioEnRutina
 import com.example.gymtrack.data.model.Rutina
+import com.example.gymtrack.data.model.SerieConEjercicio
 import com.example.gymtrack.data.model.SerieRealizada
 import com.example.gymtrack.data.model.SesionEntrenamiento
 import kotlinx.coroutines.flow.Flow
@@ -57,5 +58,9 @@ class GymRepository(
 
     fun getHistorial(rutinaId: Int): Flow<List<SesionEntrenamiento>> {
         return entrenamientoDao.getSesionesByRutina(rutinaId)
+    }
+
+    fun getSeriesConEjercicioBySesion(sesionId: Int): Flow<List<SerieConEjercicio>> {
+        return entrenamientoDao.getSeriesConEjercicioBySesion(sesionId)
     }
 }
