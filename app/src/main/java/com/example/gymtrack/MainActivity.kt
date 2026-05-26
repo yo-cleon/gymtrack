@@ -10,7 +10,7 @@ import com.example.gymtrack.data.AppDatabase
 import com.example.gymtrack.data.GymRepository
 import com.example.gymtrack.ui.EjercicioViewModel
 import com.example.gymtrack.ui.EjercicioViewModelFactory
-import com.example.gymtrack.ui.screens.EjercicioScreen as EjercicioScreen1
+import com.example.gymtrack.ui.screens.EjercicioScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
             // Si no sabes cómo se llama, puedes usar MaterialTheme directamente
             MaterialTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    EjercicioScreen1(viewModel = ejercicioViewModel)
+                    EjercicioScreen(viewModel = ejercicioViewModel)
                 }
             }
         }

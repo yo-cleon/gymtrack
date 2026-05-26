@@ -2,7 +2,9 @@ package com.example.gymtrack.data.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
+//https://gemini.google.com/app/262dfd5205275b1a?hl=es-ES
 
 @Entity(
     tableName = "series_realizadas",
@@ -18,7 +20,8 @@ import androidx.room.PrimaryKey
             parentColumns = ["id"],
             childColumns = ["ejercicioId"]
         )
-    ]
+    ],
+    indices = [Index("sesionId"), Index("ejercicioId")]
 )
 data class SerieRealizada(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,

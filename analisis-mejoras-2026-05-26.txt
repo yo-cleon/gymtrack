@@ -1,0 +1,152 @@
+================================================================================
+  ANÁLISIS DE MEJORAS — GymTrack
+  Fecha: 2026-05-26
+================================================================================
+
+  Proyecto: GymTrack (Android/Kotlin/Jetpack Compose/Room)
+  Archivos analizados: 20+ (models, DAOs, repository, ViewModel, screens, build)
+
+================================================================================
+ 🔴 PRIORIDAD ALTA — Pueden causar crashes o mal funcionamiento
+================================================================================
+
+  1. Sin estrategia de migración en Room
+     Archivo:  AppDatabase.kt:40
+     Problema: Al llamar a .build() sin .fallbackToDestructiveMigration()
+              ni objetos Migration, cualquier cambio en el esquema de la BD
+              hará que la app crashee al abrirse.
+     Solución: Agregar .fallbackToDestructiveMigration() temporalmente, o
+              implementar Migration objects con exportSchema = true.
+
+  2. Diálogo permite guardar con campos vacíos
+     Archivo:  EjercicioScreen.kt:85
+     Problema: Button(onClick = { onConfirm(nombre, grupo) }) se ejecuta
+              incluso si nombre o grupo están vacíos, guardando registros
+              inconsistentes en la BD.
+     Solución: Deshabilitar el botón si nombre.isBlank() o grupo.isBlank(),
+              o mostrar validación visual en los TextField.
+
+  3. Sin manejo de errores (try-catch) en ViewModel/Repository
+     Archivo:  EjercicioViewModel.kt:24-38, GymRepository.kt
+     Problema: Si una operación Room falla (ej. foreign key constraint),
+              la excepción se traga silenciosamente. El usuario no recibe
+              feedback y la app queda en estado inconsistente.
+     Solución: Envolver las llamadas en try-catch y exponer un StateFlow
+              de tipo UiState (Success/Error/Loading) en lugar de la lista
+              directamente.
+
+  4. Column envolviendo LazyColumn es redundante
+     Archivo:  EjercicioScreen.kt:31-32
+     Problema: Scaffold{padding -> Column { LazyColumn { ... } } }
+              El Column intermedio no aporta nada. El padding debe ir
+              aplicado directamente al LazyColumn.
+     Solución: LazyColumn(modifier = Modifier.padding(padding)) { ... }
+
+  5. Alias de import innecesario
+     Archivo:  MainActivity.kt:13
+     Problema: import ...EjercicioScreen as EjercicioScreen1
+              No hay conflicto de nombres, el alias es confuso y降低
+              legibilidad.
+     Solución: Import directo sin alias: import ...EjercicioScreen
+
+================================================================================
+ 🟡 PRIORIDAD MEDIA — Calidad de código, UX, mantenibilidad
+================================================================================
+
+  6. Wildcard imports
+     Archivos: EjercicioScreen.kt (import.*), RutinaDao.kt (import.*),
+              EntrenamientoDao.kt (import.*), AppDatabase.kt (import.*)
+     Problema: Las importaciones con * reducen claridad y pueden causar
+              conflictos difíciles de depurar.
+     Solución: Reemplazar con imports explícitos.
+
+  7. Comentarios basura / residuales de código generado
+     Archivos:
+       - SerieRealizada.kt:7   → URL de Gemini
+       - build.gradle.kts:3-5  → Versiones comentadas de plugins
+       - AppDatabase.kt:26-28  → Comentario sobre añadir DAOs "más tarde"
+       - EjercicioDao.kt:8     → Comentario sobre import que KSP necesita
+       - EjercicioScreen.kt:20,35-36 → Comentarios explicativos obvios
+       - EjercicioViewModel.kt:42-44 → KDoc redundante sobre Factory
+     Problema: Ruido que distrae y queda como código generado no limpiado.
+     Solución: Eliminar todos los comentarios que no aporten valor real.
+
+  8. Inconsistencia de nomenclatura (español vs inglés)
+     Archivos: GymRepository.kt, DAOs, ViewModel
+     Problema: Mezcla de estilos:
+              insertarEjercicio / getAllEjercicios (es/en)
+              borrarEjercicio / deleteEjercicio (es/en)
+              obtenerTodasLasRutinas / obtenerEjerciciosDeRutina (es)
+     Solución: Estandarizar todo a un solo idioma. Se recomienda inglés
+              por convención en código Android/Kotlin.
+
+  9. Sin estados visuales (carga, vacío, error)
+     Archivo:  EjercicioScreen.kt:20
+     Problema: La UI asume que siempre hay datos. No muestra:
+              - Indicador de carga mientras se lee la BD
+              - Mensaje "No hay ejercicios" cuando la lista está vacía
+              - Snackbar/Toast cuando ocurre un error
+     Solución: Implementar un UiState sellado (Loading/Success/Error) en
+              el ViewModel y manejar cada estado en la UI.
+
+  10. Sin confirmación al borrar ejercicio
+      Archivo:  EjercicioScreen.kt:36
+      Problema: El icono de borrar elimina el ejercicio inmediatamente sin
+               preguntar, lo que puede causar pérdida accidental de datos.
+      Solución: Agregar un AlertDialog de confirmación antes de borrar.
+
+  11. ProGuard / R8 deshabilitado en release
+      Archivo:  build.gradle.kts:24
+      Problema: isMinifyEnabled = false — la app release no se ofusca ni
+               optimiza, aumentando tamaño APK y riesgo de ingeniería inversa.
+      Solución: Cambiar a true y verificar las reglas de ProGuard.
+
+================================================================================
+ 🟢 PRIORIDAD BAJA — Mejoras de arquitectura, rendimiento, configuración
+================================================================================
+
+  12. Sin inyección de dependencias (Hilt/Koin)
+      Archivos: MainActivity.kt, EjercicioViewModel.kt:45-53
+      Problema: Todo se crea manualmente en la Activity. Al crecer la app,
+               el ViewModelFactory manual será tedioso de mantener. La
+               Activity tiene responsabilidades que no le corresponden.
+      Solución: Integrar Hilt (recommendado para Android) y eliminar la
+               factory manual.
+
+  13. Campo esPesoCorporal nunca se usa en UI
+      Archivo:  EjercicioScreen.kt:46, Ejercicio.kt
+      Problema: El modelo tiene el flag esPesoCorporal pero en la pantalla
+               siempre se pasa como false y no hay UI para cambiarlo.
+      Solución: Agregar un Switch/Checkbox en el diálogo "Agregar Ejercicio"
+               para que el usuario pueda indicarlo, o eliminar el campo si
+               no se necesita.
+
+  14. exportSchema = false en Room
+      Archivo:  AppDatabase.kt:17
+      Problema: Al estar deshabilitada la exportación del esquema, no se
+               genera el historial JSON de la BD. Esto dificulta depurar
+               migraciones futuras.
+      Solución: Cambiar a exportSchema = true y configurar
+               ksp { arg("room.schemaLocation", "$projectDir/schemas") }.
+
+  15. Uso de by lazy en Activity para BD/Repository
+      Archivo:  MainActivity.kt:20-22
+      Problema: lazy se reevalúa con cada recreación de Activity. Aunque
+               el singleton de Room lo mitiga, no es la práctica ideal.
+      Solución: Usar Application context o DI (Hilt) para proveer las
+               dependencias.
+
+  16. Versiones hardcodeadas sin version catalog
+      Archivo:  build.gradle.kts
+      Problema: Las versiones están escritas como strings literales. Con
+               múltiples módulos sería difícil mantenerlas sincronizadas.
+      Solución: Migrar a libs.versions.toml (Gradle Version Catalog).
+
+  17. org.gradle.parallel=true está comentado
+      Archivo:  gradle.properties:13
+      Problema: Los builds tardan más porque Gradle no paraleliza.
+      Solución: Descomentar org.gradle.parallel=true.
+
+================================================================================
+ NOTA: Este análisis fue generado con opencode el 2026-05-26.
+================================================================================
