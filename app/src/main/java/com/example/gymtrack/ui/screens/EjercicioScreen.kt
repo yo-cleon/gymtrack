@@ -47,6 +47,7 @@ import com.example.gymtrack.ui.UiState
 fun EjercicioScreen(viewModel: EjercicioViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     var mostrarDialogo by remember { mutableStateOf(false) }
+    var ejercicioAEliminar by remember { mutableStateOf<Ejercicio?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -87,7 +88,7 @@ fun EjercicioScreen(viewModel: EjercicioViewModel) {
                     items(state.data) { ejercicio ->
                         EjercicioItem(
                             ejercicio = ejercicio,
-                            onDelete = { viewModel.borrarEjercicio(ejercicio) }
+                            onDelete = { ejercicioAEliminar = ejercicio }
                         )
                     }
                 }
@@ -98,8 +99,19 @@ fun EjercicioScreen(viewModel: EjercicioViewModel) {
             AgregarEjercicioDialog(
                 onDismiss = { mostrarDialogo = false },
                 onConfirm = { nombre, grupo ->
-                    viewModel.agregarEjercicio(nombre, grupo, false)
+                    viewModel.addEjercicio(nombre, grupo, false)
                     mostrarDialogo = false
+                }
+            )
+        }
+
+        ejercicioAEliminar?.let { ejercicio ->
+            ConfirmarBorrarDialog(
+                nombreEjercicio = ejercicio.nombre,
+                onDismiss = { ejercicioAEliminar = null },
+                onConfirm = {
+                    viewModel.deleteEjercicio(ejercicio)
+                    ejercicioAEliminar = null
                 }
             )
         }
@@ -160,6 +172,25 @@ fun AgregarEjercicioDialog(onDismiss: () -> Unit, onConfirm: (String, String) ->
             ) {
                 Text("Guardar")
             }
+        }
+    )
+}
+
+@Composable
+fun ConfirmarBorrarDialog(
+    nombreEjercicio: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Eliminar ejercicio") },
+        text = { Text("¿Estás seguro de que quieres eliminar «$nombreEjercicio»?") },
+        confirmButton = {
+            Button(onClick = onConfirm) { Text("Eliminar") }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) { Text("Cancelar") }
         }
     )
 }

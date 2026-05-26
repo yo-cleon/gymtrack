@@ -1,24 +1,24 @@
 package com.example.gymtrack.data.dao
 
-import androidx.room.*
-import com.example.gymtrack.data.model.SesionEntrenamiento
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
 import com.example.gymtrack.data.model.SerieRealizada
+import com.example.gymtrack.data.model.SesionEntrenamiento
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface EntrenamientoDao {
 
     @Insert
-    suspend fun insertarSesion(sesion: SesionEntrenamiento): Long
+    suspend fun insertSesion(sesion: SesionEntrenamiento): Long
 
     @Insert
-    suspend fun insertarSerie(serie: SerieRealizada)
+    suspend fun insertSerie(serie: SerieRealizada)
 
-    // Obtener todas las sesiones de una rutina (para ver el historial)
     @Query("SELECT * FROM sesiones_entrenamiento WHERE rutinaId = :rutinaId ORDER BY fecha DESC")
-    fun obtenerHistorialSesiones(rutinaId: Int): Flow<List<SesionEntrenamiento>>
+    fun getSesionesByRutina(rutinaId: Int): Flow<List<SesionEntrenamiento>>
 
-    // Obtener todas las series de una sesión específica
     @Query("SELECT * FROM series_realizadas WHERE sesionId = :sesionId")
-    fun obtenerSeriesDeSesion(sesionId: Int): Flow<List<SerieRealizada>>
+    fun getSeriesBySesion(sesionId: Int): Flow<List<SerieRealizada>>
 }

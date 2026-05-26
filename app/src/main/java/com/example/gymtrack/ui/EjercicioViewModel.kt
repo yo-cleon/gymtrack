@@ -22,7 +22,7 @@ sealed interface UiState<out T> {
 
 class EjercicioViewModel(private val repository: GymRepository) : ViewModel() {
 
-    val uiState: StateFlow<UiState<List<Ejercicio>>> = repository.todosLosEjercicios
+    val uiState: StateFlow<UiState<List<Ejercicio>>> = repository.allEjercicios
         .map<List<Ejercicio>, UiState<List<Ejercicio>>> { UiState.Success(it) }
         .stateIn(
             scope = viewModelScope,
@@ -33,7 +33,7 @@ class EjercicioViewModel(private val repository: GymRepository) : ViewModel() {
     private val _mensajeError = MutableSharedFlow<String>()
     val mensajeError: SharedFlow<String> = _mensajeError.asSharedFlow()
 
-    fun agregarEjercicio(nombre: String, grupoMuscular: String, esPesoCorporal: Boolean) {
+    fun addEjercicio(nombre: String, grupoMuscular: String, esPesoCorporal: Boolean) {
         viewModelScope.launch {
             try {
                 val nuevoEjercicio = Ejercicio(
@@ -41,17 +41,17 @@ class EjercicioViewModel(private val repository: GymRepository) : ViewModel() {
                     grupoMuscular = grupoMuscular,
                     esPesoCorporal = esPesoCorporal
                 )
-                repository.insertarEjercicio(nuevoEjercicio)
+                repository.insertEjercicio(nuevoEjercicio)
             } catch (e: Exception) {
                 _mensajeError.emit("Error al guardar el ejercicio")
             }
         }
     }
 
-    fun borrarEjercicio(ejercicio: Ejercicio) {
+    fun deleteEjercicio(ejercicio: Ejercicio) {
         viewModelScope.launch {
             try {
-                repository.eliminarEjercicio(ejercicio)
+                repository.deleteEjercicio(ejercicio)
             } catch (e: Exception) {
                 _mensajeError.emit("No se puede borrar: el ejercicio está en uso")
             }

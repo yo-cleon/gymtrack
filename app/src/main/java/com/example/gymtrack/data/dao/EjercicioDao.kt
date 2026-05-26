@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-// IMPORT CLAVE: Esta es la línea que KSP suele echar de menos
 import com.example.gymtrack.data.model.Ejercicio
 import kotlinx.coroutines.flow.Flow
 

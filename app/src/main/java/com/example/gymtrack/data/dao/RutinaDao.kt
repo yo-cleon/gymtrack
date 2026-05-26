@@ -1,32 +1,35 @@
 package com.example.gymtrack.data.dao
 
-import androidx.room.*
-import com.example.gymtrack.data.model.Rutina
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import com.example.gymtrack.data.model.Ejercicio
 import com.example.gymtrack.data.model.EjercicioEnRutina
+import com.example.gymtrack.data.model.Rutina
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RutinaDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarRutina(rutina: Rutina): Long
+    suspend fun insertRutina(rutina: Rutina): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertarEjercicioEnRutina(relacion: EjercicioEnRutina)
+    suspend fun insertEjercicioEnRutina(relacion: EjercicioEnRutina)
 
     @Query("SELECT * FROM rutinas ORDER BY nombreRutina ASC")
-    fun obtenerTodasLasRutinas(): Flow<List<Rutina>>
+    fun getAllRutinas(): Flow<List<Rutina>>
 
-    // Esta consulta obtiene los ejercicios de una rutina específica usando el ID
     @Query("""
         SELECT e.* FROM ejercicios e 
         INNER JOIN ejercicios_en_rutina er ON e.id = er.ejercicioId 
         WHERE er.rutinaId = :rutinaId 
         ORDER BY er.orden ASC
     """)
-    fun obtenerEjerciciosDeRutina(rutinaId: Int): Flow<List<Ejercicio>>
+    fun getEjerciciosByRutina(rutinaId: Int): Flow<List<Ejercicio>>
 
     @Delete
-    suspend fun eliminarRutina(rutina: Rutina)
+    suspend fun deleteRutina(rutina: Rutina)
 }

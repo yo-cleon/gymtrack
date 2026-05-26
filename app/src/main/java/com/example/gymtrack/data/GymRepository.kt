@@ -3,7 +3,11 @@ package com.example.gymtrack.data
 import com.example.gymtrack.data.dao.EjercicioDao
 import com.example.gymtrack.data.dao.EntrenamientoDao
 import com.example.gymtrack.data.dao.RutinaDao
-import com.example.gymtrack.data.model.*
+import com.example.gymtrack.data.model.Ejercicio
+import com.example.gymtrack.data.model.EjercicioEnRutina
+import com.example.gymtrack.data.model.Rutina
+import com.example.gymtrack.data.model.SerieRealizada
+import com.example.gymtrack.data.model.SesionEntrenamiento
 import kotlinx.coroutines.flow.Flow
 
 class GymRepository(
@@ -12,53 +16,46 @@ class GymRepository(
     private val entrenamientoDao: EntrenamientoDao
 ) {
 
-    // --- SECCIÓN EJERCICIOS ---
-    val todosLosEjercicios: Flow<List<Ejercicio>> = ejercicioDao.getAllEjercicios()
+    val allEjercicios: Flow<List<Ejercicio>> = ejercicioDao.getAllEjercicios()
 
-    suspend fun insertarEjercicio(ejercicio: Ejercicio) {
+    suspend fun insertEjercicio(ejercicio: Ejercicio) {
         ejercicioDao.insertEjercicio(ejercicio)
     }
 
-    suspend fun eliminarEjercicio(ejercicio: Ejercicio) {
+    suspend fun deleteEjercicio(ejercicio: Ejercicio) {
         ejercicioDao.deleteEjercicio(ejercicio)
     }
 
-    // --- SECCIÓN RUTINAS ---
-    val todasLasRutinas: Flow<List<Rutina>> = rutinaDao.obtenerTodasLasRutinas()
+    val allRutinas: Flow<List<Rutina>> = rutinaDao.getAllRutinas()
 
-    /**
-     * Crea una rutina y le asigna una lista de ejercicios con su orden.
-     */
-    suspend fun crearRutinaCompleta(rutina: Rutina, ejerciciosIds: List<Int>) {
-        val rutinaId = rutinaDao.insertarRutina(rutina).toInt()
+    suspend fun createRutinaCompleta(rutina: Rutina, ejerciciosIds: List<Int>) {
+        val rutinaId = rutinaDao.insertRutina(rutina).toInt()
         ejerciciosIds.forEachIndexed { indice, ejercicioId ->
             val relacion = EjercicioEnRutina(
                 rutinaId = rutinaId,
                 ejercicioId = ejercicioId,
                 orden = indice + 1
             )
-            rutinaDao.insertarEjercicioEnRutina(relacion)
+            rutinaDao.insertEjercicioEnRutina(relacion)
         }
     }
 
-    fun obtenerEjerciciosDeRutina(rutinaId: Int): Flow<List<Ejercicio>> {
-        return rutinaDao.obtenerEjerciciosDeRutina(rutinaId)
+    fun getEjerciciosByRutina(rutinaId: Int): Flow<List<Ejercicio>> {
+        return rutinaDao.getEjerciciosByRutina(rutinaId)
     }
 
-    // --- SECCIÓN ENTRENAMIENTO ---
-    suspend fun registrarSesionConSeries(
+    suspend fun registerSesionConSeries(
         sesion: SesionEntrenamiento,
         series: List<SerieRealizada>
     ) {
-        val sesionId = entrenamientoDao.insertarSesion(sesion).toInt()
+        val sesionId = entrenamientoDao.insertSesion(sesion).toInt()
         series.forEach { serie ->
-            // Copiamos la serie asignándole el ID de la sesión recién creada
             val serieConId = serie.copy(sesionId = sesionId)
-            entrenamientoDao.insertarSerie(serieConId)
+            entrenamientoDao.insertSerie(serieConId)
         }
     }
 
-    fun obtenerHistorial(rutinaId: Int): Flow<List<SesionEntrenamiento>> {
-        return entrenamientoDao.obtenerHistorialSesiones(rutinaId)
+    fun getHistorial(rutinaId: Int): Flow<List<SesionEntrenamiento>> {
+        return entrenamientoDao.getSesionesByRutina(rutinaId)
     }
 }

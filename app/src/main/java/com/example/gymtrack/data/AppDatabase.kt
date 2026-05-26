@@ -1,9 +1,17 @@
 package com.example.gymtrack.data
 
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.gymtrack.data.dao.* // Importaremos todos los DAOs
-import com.example.gymtrack.data.model.* // Importaremos todas las tablas
+import com.example.gymtrack.data.dao.EjercicioDao
+import com.example.gymtrack.data.dao.EntrenamientoDao
+import com.example.gymtrack.data.dao.RutinaDao
+import com.example.gymtrack.data.model.Ejercicio
+import com.example.gymtrack.data.model.EjercicioEnRutina
+import com.example.gymtrack.data.model.Rutina
+import com.example.gymtrack.data.model.SerieRealizada
+import com.example.gymtrack.data.model.SesionEntrenamiento
 
 @Database(
     entities = [
@@ -18,14 +26,9 @@ import com.example.gymtrack.data.model.* // Importaremos todas las tablas
 )
 abstract class AppDatabase : RoomDatabase() {
 
-    // Aquí expondremos los DAOs que la app usará para leer/escribir
     abstract fun ejercicioDao(): EjercicioDao
     abstract fun rutinaDao(): RutinaDao
     abstract fun entrenamientoDao(): EntrenamientoDao
-
-    /* Nota: A medida que crees los DAOs para Rutina, Sesion, etc.,
-       los añadiremos aquí abajo igual que el de arriba.
-    */
 
     companion object {
         @Volatile
@@ -33,7 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: android.content.Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = androidx.room.Room.databaseBuilder(
+                val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "gym_database"
